@@ -2,7 +2,7 @@
 
 /**
  * 
- * database schema
+ * installing class
  */
 
 
@@ -13,13 +13,17 @@ class hyperpay_main
     ] ;
 
 
-    public function load()
+    public  function load()
     {
-        foreach(hyperpay_main::$HP_gateways as $names ){
+        foreach(self::$HP_gateways as $names ){
             include_once HYPERPAY_ABSPATH . "gateways/$names.php";
         }
 
+        // echo 'ss';
+        // die;
+
         add_filter('woocommerce_payment_gateways', ['hyperpay_main', 'get_gateways']);
+        
         
     }
 
@@ -43,6 +47,6 @@ class hyperpay_main
 
     public function get_gateways($gateways){
 
-        return array_merge($gateways , hyperpay_main::$HP_gateways);
+        return array_merge($gateways , self::$HP_gateways);
     }
 }

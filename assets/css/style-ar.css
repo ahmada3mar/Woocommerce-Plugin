@@ -1,0 +1,9 @@
+.hyperpay-customLabel{
+    direction: rtl;
+}
+
+.wpwl-group{
+    text-align: right !important;
+    text-align: -moz-right !important;
+    text-align: -webkit-right !important;
+     }

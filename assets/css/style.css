@@ -1,0 +1,8 @@
+.HP_supported-brans-icons{
+    display:flex;
+    align-items:center
+}
+
+.HP_supported-brans-icons li {
+    flex:1
+}
