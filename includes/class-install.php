@@ -35,6 +35,7 @@ class hyperpay_main
          */
 
         add_filter('woocommerce_payment_gateways', ['hyperpay_main', 'get_gateways']);
+        self::run_migration();
         
     }
 
