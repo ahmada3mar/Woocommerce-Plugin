@@ -96,24 +96,22 @@ class Hyperpay_main_class extends WC_Payment_Gateway
 
         $this->init_settings(); // <== to get saved settings from database
         $this->init_form_fields(); // <== render form inside admin panel
-        $this->is_arabic = str_starts_with(get_locale(), 'ar');
+        $this->is_arabic = str_starts_with(get_locale(), 'ar'); // <== to get current locale 
 
-        $this->testmode = $this->get_option('testmode');
-        $this->title = $this->get_option('title');
-        $this->trans_type = $this->get_option('trans_type');
-        $this->trans_mode = $this->get_option('trans_mode');
-        $this->accesstoken = $this->get_option('accesstoken');
-        $this->entityid = $this->get_option('entityId');
-        $this->brands = $this->get_option('brands');
+        $this->testmode = $this->get_option('testmode'); // <== check if payments on test mode 
+        $this->title = $this->get_option('title'); // <== get title from setting
+        $this->trans_type = $this->get_option('trans_type'); // <== get transaction type [DB / Pre-Auth] from setting
+        $this->connector_type = $this->get_option('connector_type'); // <== get transaction connector [ MEGS / VISA ] from setting
+        $this->accesstoken = $this->get_option('accesstoken'); // <== get accesstoke from setting
+        $this->entityid = $this->get_option('entityId'); // <== get entityId from setting
+        $this->brands = $this->get_option('brands'); // <== get brands from setting
 
-        $this->connector_type = $this->get_option('connector_type');
-        $this->payment_style = $this->get_option('payment_style');
-        $this->mailerrors = $this->get_option('mailerrors');
-        $this->order_status = $this->get_option('order_status');
-        $this->tokenization = $this->get_option('tokenization');
-        $this->redirect_page_id = $this->get_option('redirect_page_id');
-        $this->lang = $this->get_option('lang');
-        $this->custom_style = $this->get_option('custom_style');
+        $this->payment_style = $this->get_option('payment_style'); // <== get style from setting
+        $this->mailerrors = $this->get_option('mailerrors'); // <== get if mail error check or not from setting
+        $this->order_status = $this->get_option('order_status'); // <== get order status after success from setting
+        $this->tokenization = $this->get_option('tokenization'); // <== get tokenization from setting  if enabled store user ditails in DB
+        $this->redirect_page_id = $this->get_option('redirect_page_id'); // <== after order complete redirect to selected page
+        $this->custom_style = $this->get_option('custom_style'); // <== get custom style from setting
 
 
         if ($this->is_arabic) {
@@ -121,6 +119,10 @@ class Hyperpay_main_class extends WC_Payment_Gateway
             $this->success_message = 'تم إجراء عملية الدفع بنجاح.';
         }
 
+        /**
+         * if test mode is one 
+         * overwrite currents URLs ti test URLs
+         */
         if ($this->testmode) {
             $this->query_url = "https://test.oppwa.com/v1/query";
             $this->token_url = "https://test.oppwa.com/v1/checkouts";
@@ -137,6 +139,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
          * @param woocommerce_update_options_payment_gateways_<payment_id>
          * @param array[class,function_name]
          */
+
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array(&$this, 'process_admin_options'));
 
         /**
@@ -145,6 +148,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
          * @param string woocommerce_receipt_<payments_id>
          * @param array[class,function_name]
          */
+
         add_action("woocommerce_receipt_{$this->id}", [$this, 'receipt_page']);
 
         /**
@@ -175,10 +179,14 @@ class Hyperpay_main_class extends WC_Payment_Gateway
      * @return void
      */
 
-    public function admin_script()
+    public function admin_script(): void
     {
         global  $current_tab, $current_section;
 
+        /**
+         * to make sure load admin.js just when currents pyments opened
+         * 
+         */
         if ($current_tab == 'checkout' && $current_section == $this->id) {
 
             $data = [
@@ -203,20 +211,29 @@ class Hyperpay_main_class extends WC_Payment_Gateway
      * 
      */
 
-    public function set_icons($icon, $id)
+    public function set_icons($icon, $id): string
     {
 
         if ($id == $this->id) {
             $icons = "<ul class='HP_supported-brans-icons'>";
             foreach ($this->supported_brands as $key => $brand) {
-                $icons .= "<li><img src='" . HYPERPAY_PLUGIN_DIR . '/assets/images/' . esc_attr($key) . "-logo.png'></li>";
+                $img = HYPERPAY_PLUGIN_DIR . '/assets/images/default.png';
+
+                if (file_exists(HYPERPAY_ABSPATH . '/assets/images/' . esc_attr($key) . "-logo.png"))
+                    $img = HYPERPAY_PLUGIN_DIR . '/assets/images/' . esc_attr($key) . "-logo.png";
+
+                $icons .= "<li><img src='$img'></li>";
             }
             return $icons . '</ul>';
         }
         return $icon;
     }
 
-    public function init_form_fields()
+    /**
+     * Here you can define all fiels thats will showning in setting page
+     * @return void
+     */
+    public function init_form_fields(): void
     {
 
         $this->form_fields = [
@@ -232,7 +249,6 @@ class Hyperpay_main_class extends WC_Payment_Gateway
                 'options' => ['0' => __('Off'), '1' => __('On')]
             ],
             'title' => [
-                'id' => 'ahmad_test',
                 'title' => __('Title:'),
                 'type' => 'text',
                 'description' => ' ' . __('This controls the title which the user sees during checkout.'),
@@ -304,7 +320,12 @@ class Hyperpay_main_class extends WC_Payment_Gateway
     }
 
 
-    function get_order_status()
+    /**
+     *  to fill order_status select fiels
+     * 
+     * @return array
+     */
+    function get_order_status(): array
     {
         $order_status = [
 
@@ -315,7 +336,12 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         return $order_status;
     }
 
-    function get_hyperpay_tokenization()
+    /**
+     *  to fill tokenization select fiels
+     * 
+     * @return array
+     */
+    function get_hyperpay_tokenization(): array
     {
         $hyperpay_tokenization = [
             'enable' => 'Enable',
@@ -325,7 +351,12 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         return $hyperpay_tokenization;
     }
 
-    function get_hyperpay_trans_type()
+    /**
+     *  to fill trans_type select fiels
+     * 
+     * @return array
+     */
+    function get_hyperpay_trans_type(): array
     {
         $hyperpay_trans_type = [
             'DB' => 'Debit',
@@ -335,7 +366,12 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         return $hyperpay_trans_type;
     }
 
-    function get_hyperpay_connector_type()
+    /**
+     *  to fill connector_type select fiels
+     * 
+     * @return array
+     */
+    function get_hyperpay_connector_type(): array
     {
         $hyperpay_connector_type = [
             'MPGS' => 'MPGS',
@@ -345,18 +381,26 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         return $hyperpay_connector_type;
     }
 
-    function receipt_page($order)
+    /**
+     * This function fire when click on Place order at checkout page
+     * @param int $order_id
+     * 
+     * @return void
+     */
+    function receipt_page($order_id): void
     {
+
         global $woocommerce;
-        $order = new WC_Order($order);
-        $error = false; // used to rerender the form in case of an error
+        $order = new WC_Order($order_id);
 
 
+        // new transaction contain g2p_token 
         if (isset($_GET['g2p_token'])) {
-            $token = $_GET['g2p_token'];
+            $token =  esc_attr($_GET['g2p_token']);
             $this->renderPaymentForm($order, $token);
         }
 
+        // old transaction contain id 
         if (isset($_GET['id'])) {
             $token = $_GET['id'];
 
@@ -364,6 +408,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
             $url = str_replace('##TOKEN##', $token, $this->transaction_status_url);
 
 
+            // set header request to contain access token
             $auth = [
 
                 'headers' => ['Authorization:Bearer ' . $this->accesstoken]
@@ -378,6 +423,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
 
             if (isset($resultJson['result']['code'])) {
 
+                // check if transaction faild and the reason if mada card or not 
                 $mada = $this->check_mada($resultJson);
                 $success = $mada['status'];
                 $failed_msg = $mada['msg'];
@@ -401,6 +447,9 @@ class Hyperpay_main_class extends WC_Payment_Gateway
 
                             $uniqueId = $resultJson['id'];
 
+                            /**
+                             * update or create user data
+                             */
                             if (isset($resultJson['registrationId'])) {
 
                                 $registrationID = $resultJson['registrationId'];
@@ -427,7 +476,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
                                 }
                             }
 
-                            $order->add_order_note($this->success_message . 'Transaction ID: ' . $uniqueId);
+                            $order->add_order_note($this->success_message . 'Transaction ID: ' . esc_html($uniqueId));
                         }
 
                         wp_redirect($this->get_return_url($order));
@@ -439,50 +488,62 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         }
     }
 
-    private function renderPaymentForm($order, $token = '')
+    /**
+     * 
+     * render CopyAndPay form
+     * @param object $order
+     * @param string $token
+     * @return void
+     */
+    private function renderPaymentForm(object $order, string $token): void
     {
 
-        if ($token) {
+        $scriptURL = $this->script_url;
+        $scriptURL .= $token;
 
-            $scriptURL = $this->script_url;
-            $scriptURL .= $token;
+        $payment_brands = $this->brands;
+        if (is_array($this->brands))
+            $payment_brands = implode(' ', $this->brands);
 
-            $payment_brands = $this->brands;
-            if (is_array($this->brands))
-                $payment_brands = implode(' ', $this->brands);
+        $postbackURL = $order->get_checkout_payment_url(true);
 
-            $postbackURL = $order->get_checkout_payment_url(true);
-
-            if (parse_url($postbackURL, PHP_URL_QUERY)) {
-                $postbackURL .= '&';
-            } else {
-                $postbackURL .= '?';
-            }
-            $postbackURL .= 'hpOrderId=' . $order->get_id();
-
-            $dataObj = [
-                'is_arabic' => esc_js($this->is_arabic),
-                'style' => esc_js($this->payment_style),
-                'tokenization' => esc_js($this->tokenization),
-                'postbackURL' => esc_url($postbackURL),
-                'payment_brands' => esc_js($payment_brands)
-            ];
-
-
-            wp_enqueue_script('wpwl_hyperpay_script', $scriptURL, null, null);
-
-            wp_enqueue_script('hyperpay_script',  HYPERPAY_PLUGIN_DIR . '/assets/js/script.js', ['jquery'], false, true);
-            wp_localize_script('hyperpay_script', 'dataObj', $dataObj);
-
-            echo '<style>' . wp_unslash($this->custom_style) . '</style>';
+        if (parse_url($postbackURL, PHP_URL_QUERY)) {
+            $postbackURL .= '&';
+        } else {
+            $postbackURL .= '?';
         }
+        $postbackURL .= 'hpOrderId=' . $order->get_id();
+
+        $dataObj = [
+            'is_arabic' => esc_js($this->is_arabic),
+            'style' => esc_js($this->payment_style),
+            'tokenization' => esc_js($this->tokenization),
+            'postbackURL' => esc_url($postbackURL),
+            'payment_brands' => esc_js($payment_brands)
+        ];
+
+
+        // include  CopyAndPay script to show the form
+        wp_enqueue_script('wpwl_hyperpay_script', $scriptURL, null, null);
+
+        // include assests\js\script.js to set wpwlOptions 
+        wp_enqueue_script('hyperpay_script',  HYPERPAY_PLUGIN_DIR . '/assets/js/script.js', ['jquery'], false, true);
+
+        // pass data to assests\js\script.js
+        wp_localize_script('hyperpay_script', 'dataObj', $dataObj);
+
+        // apply custom style that's entered on setting page <custom_style>
+        wp_add_inline_style('hyperpay_custom_style', $this->custom_style);
     }
 
 
     /**
      * Process the payment and return the result
-     * */
-    public function process_payment($order_id)
+     * @param int $order_id
+     * @return array[redirect,token,result]
+     * 
+     */
+    public function process_payment($order_id): array
     {
         $order = new WC_Order($order_id);
         $customerID = $order->get_customer_id();
@@ -520,6 +581,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
             $state = $city;
         }
 
+        // set data to post 
         $data = [
             'headers' => [
                 "Authorization" => "Bearer {$this->accesstoken}"
@@ -539,8 +601,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
             ]
         ];
 
-        echo "<pre>";
-        $this->setExtraData($order);
+
 
         $url = $this->token_url;
 
@@ -585,11 +646,15 @@ class Hyperpay_main_class extends WC_Payment_Gateway
             if ($registrationIDs) {
 
                 foreach ($registrationIDs as $key => $id) {
-                    $data .= "&registrations[$key].id=" . $id->registration_id;
+                    $data["registrations[$key].id"] =  $id->registration_id;
                 }
             }
         }
 
+        // add extra parameters if exists
+        $data = array_merge_recursive($data, $this->setExtraData($order));
+
+        // HTTP Request to oppwa to get checkout id
         $response = wp_remote_post($url, $data);
 
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) != 200) {
@@ -605,6 +670,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
             $token = $result['id'];
         }
 
+        // add g2p_token to url query
         return [
             'result' => 'success',
             'token' => $token ?? null,
@@ -612,7 +678,15 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         ];
     }
 
-    function get_pages($title = false, $indent = true)
+    /**
+     * to get all pages of website to fill <redirect to> option in admin setting 
+     * 
+     * @param bool
+     * @param bool
+     * @return array
+     * 
+     */
+    function get_pages(bool $title = false, bool $indent = true): array
     {
         $wp_pages = get_pages('sort_column=menu_order');
         $page_list = [];
@@ -638,28 +712,45 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         return $page_list;
     }
 
-    function isThisEnglishText($text)
+    /**
+     * check if entered name is english or not
+     * @param string
+     * @return bool
+     */
+    function isThisEnglishText(string $text): bool
     {
         return preg_match("/\p{Latin}+/u", $text);
     }
 
-    public function queryTransactionReport($merchantTrxId)
+    /**
+     * 
+     * GET request to transaction report to check if transaction exists or not
+     * @param int
+     * @return array $response
+     * 
+     */
+    public function queryTransactionReport(string $merchantTrxId): array
     {
 
         $url =  $this->query_url . "&merchantTransactionId=$merchantTrxId";
-
-
         $response = wp_remote_get($url, ["headers" => ["Authorization" => "Bearer {$this->accesstoken}"]]);
 
         $response = wp_remote_retrieve_body($response);
         $response = json_decode($response, true);
 
-
         return $response;
     }
 
 
-    public function check_mada($resultJson)
+
+    /**
+     * 
+     * check if the reason of rejection was mada card
+     * 
+     * @param array $resultJson
+     * @return array[status,msg]
+     */
+    public function check_mada(array $resultJson): array
     {
 
         $success = false;
@@ -692,7 +783,13 @@ class Hyperpay_main_class extends WC_Payment_Gateway
     }
 
 
-    public function process_faild_payment($order, $msg)
+    /**
+     * handel faild pyments 
+     * @param object $order
+     * @param string $messege
+     * @return void
+     */
+    public function process_faild_payment(object $order, string $msg): void
     {
 
         if (isset($_GET['hpOrderId'])) {
@@ -713,49 +810,43 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         wc_print_notices();
     }
 
-    public function processQueryResult($resultJson, $order)
+    /**
+     * check the result of transaction if success of faild 
+     * 
+     * @param array $resultJson
+     * @param object $order
+     * @return void
+     */
+    public function processQueryResult(array $resultJson, object $order): void
     {
         global $woocommerce;
         $success = 0;
 
-        $payment = end($resultJson['payments']); // et the last p
+        $payment = end($resultJson['payments']); // get the last transaction
 
         if (isset($payment['result']['code'])) {
-            $successCodePattern = '/^(000\.000\.|000\.100\.1|000\.[36])/';
-            $successManualReviewCodePattern = '/^(000\.400\.0|000\.400\.100)/';
-            //success status
-            if (preg_match($successCodePattern, $payment['result']['code']) || preg_match($successManualReviewCodePattern, $payment['result']['code'])) {
-                $success = 1;
-            } else {
-                //fail case
-                $failed_msg = $payment['result']['description'];
-                if (isset($payment['card']['bin']) && $payment['result']['code'] == '800.300.401') {
-                    $searchBin = $payment['card']['bin'];
-                    if (in_array($searchBin, $this->blackBins)) {
-                        if ($this->is_arabic) {
-                            $failed_msg = 'عذرا! يرجى اختيار خيار الدفع "مدى" لإتمام عملية الشراء بنجاح.';
-                        } else {
-                            $failed_msg = 'Sorry! Please select "mada" payment option in order to be able to complete your purchase successfully.';
-                        }
-                    }
-                }
-            }
+            $result = $this->check_mada($payment);
+            $success = $result['status'];
 
             if ($success) {
                 if ($order->status != 'completed') {
                     $order->update_status($this->order_status);
                     $woocommerce->cart->empty_cart();
                     $uniqueId = $payment['id'];
-                    $order->add_order_note($this->success_message . 'Transaction ID: ' . $uniqueId);
+                    $order->add_order_note($this->success_message . 'Transaction ID: ' . esc_html($uniqueId));
                     wp_redirect($this->get_return_url($order));
                 }
             }
         }
     }
 
-    public function setExtraData($order)
+    /**
+     * set customParameters of requested data 
+     * @param object 
+     * @return array
+     */
+    public function setExtraData(object $order): array
     {
-        print_r($order -> id) ;
         return [];
     }
 }

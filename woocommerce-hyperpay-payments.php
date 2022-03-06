@@ -7,10 +7,10 @@
  * Version:     1.7
  * Author:      Hyperpay Team
  * Author URI:  https://www.hyperpay.com
- * Requires at least: 5.6
- * Requires PHP: 7.0
- * WC requires at least: 4.0
- * WC tested up to: 4.1
+ * Requires at least: 5.3
+ * Requires PHP: 7.1
+ * WC requires at least: 3.0.9
+ * WC tested up to: 6.2.1
  * 
  */
 

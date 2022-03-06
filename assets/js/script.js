@@ -8,26 +8,23 @@ form.attr('action', dataObj.postbackURL)
     .attr('data-brands', dataObj.payment_brands)
 jQuery('.order_details').after(form)
 
+/**
+ * 
+ * to check if current broswer support ApplePay 
+ * @param {boolean} 
+ * if @returns {false} attach error message Your Device Dose Not Support ApplePay
+ */
 if (!window.ApplePaySession && dataObj.payment_brands.includes('APPLEPAY')) {
     jQuery('.woocommerce-notices-wrapper')
     .append('<ul class="woocommerce-error" role="alert"><li>Your Device Dose Not Support ApplePay</li></ul>')
  }
 
+ /**
+  * initiate wpwlOptions 
+  */
 var wpwlOptions = {
 
     onReady: function () {
-
-        if (dataObj.tokenization == 'enable') {
-
-            const storeMsg = dataObj.is_arabic ? 'Store payment details?' : ' هل تريد حفظ معلومات البطاقة ؟';
-
-            let savingCard = jQuery("<div></div>").addClass('customLabel hyperpay-customLabel')
-                .text(storeMsg)
-                .append(jQuery('<input type="checkbox" name="createRegistration" value="true">'))
-
-            jQuery('.wpwl-button').before(savingCard);
-        }
-
 
         jQuery('.wpwl-form-virtualAccount-STC_PAY .wpwl-wrapper-radio-qrcode').hide();
         jQuery('.wpwl-form-virtualAccount-STC_PAY .wpwl-wrapper-radio-mobile').hide();
@@ -37,7 +34,7 @@ var wpwlOptions = {
         jQuery('.wpwl-form-virtualAccount-STC_PAY .wpwl-wrapper-radio-mobile .wpwl-control-radio-mobile').trigger('click');
 
     },
-    "style": dataObj.style, // <== this style comes from settings
+    "style": dataObj.style, // <== this style comes from settings page of gateways
     "paymentTarget": "_top",
     "registrations": {
         "hideInitialPaymentForms": "true",

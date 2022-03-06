@@ -1,8 +1,8 @@
 === WooCommerce HyperPay Payments ===
 Tags: gate2play, merchant, payment gateway, WooCommerce, e-commerce
-Requires at least: 3.8.1
-Tested up to: 5.9.1
-Requires PHP: 7.0
+Requires at least: 5.3
+Tested up to: 5.9
+Requires PHP: 7.1
 Stable tag: 1.7
 
 Payments Gateways provided by Gate2Play, to make you able to add Credit Card, Mada, STCpay and more payments method.
@@ -20,4 +20,8 @@ The data extracted is quite sensitive and contains information that may be used 
 3- select and configure the payment gateway
 
 == Compatability ==
-The plugin has been tested with WooCommerce 2.1.2 I can't guarantee that it will work with older versions of WooCommerce.
+The plugin has been tested with
+WooCommerce 3.0.9
+wordpress 5.3
+PHP 7.1
+

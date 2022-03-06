@@ -20,7 +20,7 @@ class hyperpay_main
 	 * @return void
 	 */
 
-    public function load()
+    public function load() :void
     {
         foreach(self::$HP_gateways as $names ){ // <== looping over all regestered class in $HP_gateways array
             include_once HYPERPAY_ABSPATH . "gateways/$names.php";
@@ -41,7 +41,7 @@ class hyperpay_main
     /**
      * CREATE tabe on database to store users transaction mode
      */
-    public static function run_migration()
+    public static function run_migration() :void
     {
 
         global $wpdb;
@@ -59,8 +59,15 @@ class hyperpay_main
         dbDelta($sql_raw, true);
     }
 
+    /**
+     * Merge the previous gateways with hyperPay gatways
+     * 
+     * @param array $gateways
+     * @return array $updated_gateways
+     */
 
-    public function get_gateways($gateways){
+    public function get_gateways(array $gateways): array
+    {
 
         return array_merge($gateways , self::$HP_gateways);
     }
