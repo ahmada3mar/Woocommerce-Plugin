@@ -1,32 +1,46 @@
 <?php
-
-/**
- * 
- * installing class
- */
-
-
 class hyperpay_main
 {
+	/**
+	 * Payment gateway classes.
+	 * all new class should added here
+	 * @var array
+	 */
     protected static $HP_gateways = [
-        'WC_Hyperpay_Gateway'
+        // Add Class Here
+        'WC_Hyperpay_Gateway',
+        'WC_Hyperpay_STCPay_Gateway',
+        'WC_Hyperpay_Mada_Gateway',
+        'WC_Hyperpay_ApplePay_Gateway'
     ] ;
 
+    /**
+	 * First function fire when click on active plugin
+     * 
+	 * @return void
+	 */
 
-    public  function load()
+    public function load()
     {
-        foreach(self::$HP_gateways as $names ){
+        foreach(self::$HP_gateways as $names ){ // <== looping over all regestered class in $HP_gateways array
             include_once HYPERPAY_ABSPATH . "gateways/$names.php";
         }
 
-        // echo 'ss';
-        // die;
+        /**
+         * this filter documented in woocommerce to asign all gateways to [payments tab] insude woocommerce settings
+         * 
+         * @param string filter_name 
+         * @param array[class_name,function_name]
+         * @return void
+         */
 
         add_filter('woocommerce_payment_gateways', ['hyperpay_main', 'get_gateways']);
         
-        
     }
 
+    /**
+     * CREATE tabe on database to store users transaction mode
+     */
     public static function run_migration()
     {
 
@@ -44,6 +58,7 @@ class hyperpay_main
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql_raw, true);
     }
+
 
     public function get_gateways($gateways){
 

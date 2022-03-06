@@ -1,20 +1,20 @@
-=== Gate2Play Payment Gateway for WooCommerce Extension ===
+=== WooCommerce HyperPay Payments ===
 Tags: gate2play, merchant, payment gateway, WooCommerce, e-commerce
 Requires at least: 3.8.1
 Tested up to: 5.9.1
 Requires PHP: 7.0
 Stable tag: 1.7
 
-Gate2Play.com payment gateway
+Payments Gateways provided by Gate2Play, to make you able to add Credit Card, Mada, STCpay and more payments method.
 
 == Description ==
-Espresso Diagnostics extracs data on your Wordpress installation, installed themes, installed plugins (active and inactive), webserver information, PHP version and DB information.
-You can use the main plugin page (accessed from Tools > WP Diagnostics) to reference this information.
-You can use the download buttons to create an archive containing all information in json or csv formats
-You may also choose to use the "Generate text version top copy and paste" button to copoy and paste
+Payments Gateways provided by Gate2Play, to make you able to add Credit Card, Mada, STCpay and more payments method.
+to be able to use this pluging, you should be one of HyperPay's customers.
+vist https://hyperpay.com for more informations.
 
 The data extracted is quite sensitive and contains information that may be used to check the vulnerability of your Wordpress site. Be wary of you share this data with.
 == Installation ==
+** Make sure you install and active WooCommerce before installing this plugin **
 1- install and active the plugin
 2- go to the WooCommerce settings page and select the Payment Gateways tab
 3- select and configure the payment gateway

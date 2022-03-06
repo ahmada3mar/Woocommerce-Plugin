@@ -1,33 +1,101 @@
 <?php
+
+/**
+ * HayperPay main class created to extends from it 
+ * when create a new paymentsgateways
+ * 
+ */
 class Hyperpay_main_class extends WC_Payment_Gateway
 {
 
+    /**
+     * if payments have direct fields on ckeckout page 
+     * 
+     * @var boolean
+     */
+    public $has_fields = false;
+    protected $loader;
+
+    /**
+     * check if user sigined in or not 
+     * 
+     * @var boolean
+     */
     protected $is_registered_user = false;
+
+    /**
+     * Mada BlackBins
+     * 
+     * @var array
+     */
     protected $blackBins = [];
+
+    /**
+     * supported brands thats will showing on settings and checkout page
+     * 
+     * @var array
+     */
     protected $supported_brands = [];
 
+
+    /**
+     * CopyAndPay script URL
+     * 
+     * @var string
+     */
     protected $script_url = "https://oppwa.com/v1/paymentWidgets.js?checkoutId=";
+
+    /**
+     * CopyAndPay prepare checkout link
+     * 
+     * @method POST
+     * @var string
+     */
     protected $token_url = "https://oppwa.com/v1/checkouts";
+
+    /**
+     * get transaction status
+     * @method GET
+     * @var string
+     * 
+     * ##TOKEN## will replace with transaction id when fire the request
+     */
     protected $transaction_status_url = "https://oppwa.com/v1/checkouts/##TOKEN##/payment";
-    protected $script_url_test = "https://test.oppwa.com/v1/paymentWidgets.js?checkoutId=";
-    protected $token_url_test = "https://test.oppwa.com/v1/checkouts";
-    protected $transaction_status_url_test = "https://test.oppwa.com/v1/checkouts/##TOKEN##/payment";
-    protected $query_url_test = "https://test.oppwa.com/v1/query";
+
+    /** 
+     * Query transaction report
+     * 
+     * @method GET
+     * @var string
+     */
     protected $query_url = "https://oppwa.com/v1/query";
 
+    /**
+     * default faild message 
+     * @var string
+     */
     protected $failed_message =  'Your transaction has been declined.';
     protected $success_message = 'Your payment has been processed successfully.';
 
+    /**
+     * payment styles that will show in settings 
+     * 
+     * @var array
+     * 
+     */
     protected  $hyperpay_payment_style = [
         'card' => 'Card',
         'plain' => 'Plain'
     ];
 
+    protected $dataTosend = [];
+
 
     function __construct()
     {
-        $this->init_settings();
-        $this->init_form_fields();
+
+        $this->init_settings(); // <== to get saved settings from database
+        $this->init_form_fields(); // <== render form inside admin panel
         $this->is_arabic = str_starts_with(get_locale(), 'ar');
 
         $this->testmode = $this->get_option('testmode');
@@ -37,6 +105,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         $this->accesstoken = $this->get_option('accesstoken');
         $this->entityid = $this->get_option('entityId');
         $this->brands = $this->get_option('brands');
+
         $this->connector_type = $this->get_option('connector_type');
         $this->payment_style = $this->get_option('payment_style');
         $this->mailerrors = $this->get_option('mailerrors');
@@ -44,6 +113,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         $this->tokenization = $this->get_option('tokenization');
         $this->redirect_page_id = $this->get_option('redirect_page_id');
         $this->lang = $this->get_option('lang');
+        $this->custom_style = $this->get_option('custom_style');
 
 
         if ($this->is_arabic) {
@@ -51,11 +121,87 @@ class Hyperpay_main_class extends WC_Payment_Gateway
             $this->success_message = 'تم إجراء عملية الدفع بنجاح.';
         }
 
+        if ($this->testmode) {
+            $this->query_url = "https://test.oppwa.com/v1/query";
+            $this->token_url = "https://test.oppwa.com/v1/checkouts";
+            $this->script_url = "https://test.oppwa.com/v1/paymentWidgets.js?checkoutId=";
+            $this->transaction_status_url = "https://test.oppwa.com/v1/checkouts/##TOKEN##/payment";
+        }
 
-        add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
-        add_action('woocommerce_receipt_hyperpay', [&$this, 'receipt_page']);
+        $this->query_url .= "?entityId=" . $this->entityid;
+        $this->transaction_status_url .= "?entityId=" . $this->entityid;
+
+        /**
+         * overwrite default update function 
+         * 
+         * @param woocommerce_update_options_payment_gateways_<payment_id>
+         * @param array[class,function_name]
+         */
+        add_action('woocommerce_update_options_payment_gateways_' . $this->id, array(&$this, 'process_admin_options'));
+
+        /**
+         * prepare checkout form
+         * 
+         * @param string woocommerce_receipt_<payments_id>
+         * @param array[class,function_name]
+         */
+        add_action("woocommerce_receipt_{$this->id}", [$this, 'receipt_page']);
+
+        /**
+         * set payments icon from assets/images/BRAND-log.png 
+         * 
+         * make sure when add new image to rename image accorden this format BRAND_NAME-logo.png
+         * 
+         * @param string woocommerce_gateway_icon
+         * @param array[class,function_name]
+         * 
+         */
         add_filter('woocommerce_gateway_icon', [$this, 'set_icons'], 10, 2);
+
+        /**
+         * to include assets/js/admin.js <JavaScript>
+         * 
+         * @param string admin_enqueue_scripts
+         * @param array[class,function_name]
+         *          
+         */
+        add_action('admin_enqueue_scripts', [$this, 'admin_script']);
     }
+
+
+
+    /**
+     * for validate settings form
+     * @return void
+     */
+
+    public function admin_script()
+    {
+        global  $current_tab, $current_section;
+
+        if ($current_tab == 'checkout' && $current_section == $this->id) {
+
+            $data = [
+                'id' => $this->id,
+                'url' => $this->token_url,
+                'code_setting' => wp_enqueue_code_editor(['type' => 'text/css'])
+            ];
+
+            wp_enqueue_script('hyperpay_admin',  HYPERPAY_PLUGIN_DIR . '/assets/js/admin.js', ['jquery'], false, true);
+            wp_localize_script('hyperpay_admin', 'data', $data);
+        }
+    }
+
+
+    /**
+     * to set payment icon based on supported brands
+     * 
+     * @param string $icon
+     * @param string $id currnet payment id
+     * 
+     * @return string  $icon new icon
+     * 
+     */
 
     public function set_icons($icon, $id)
     {
@@ -77,7 +223,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
             'enabled' => [
                 'title' => __('Enable/Disable'),
                 'type' => 'checkbox',
-                'label' => __('Enable Hyperpay Payment Module.'),
+                'label' => __('Enable Payment Module.'),
                 'default' => 'no'
             ],
             'testmode' => [
@@ -86,10 +232,11 @@ class Hyperpay_main_class extends WC_Payment_Gateway
                 'options' => ['0' => __('Off'), '1' => __('On')]
             ],
             'title' => [
+                'id' => 'ahmad_test',
                 'title' => __('Title:'),
                 'type' => 'text',
                 'description' => ' ' . __('This controls the title which the user sees during checkout.'),
-                'default' => $this->is_arabic ? __('بطاقة ائتمانية') : __('Credit Card')
+                'default' => $this->title ?? ($this->is_arabic ? __('بطاقة ائتمانية') : __('Credit Card'))
             ],
             'trans_type' => [
                 'title' => __('Transaction type'),
@@ -126,6 +273,13 @@ class Hyperpay_main_class extends WC_Payment_Gateway
                 'class' => count($this->hyperpay_payment_style) !== 1 ?:  'disabled',
                 'options' => $this->hyperpay_payment_style,
                 'default' => 'plain'
+            ],
+            'custom_style' => [
+                'title' => __('Custom Style'),
+                'type' => 'textarea',
+                'description' => 'Input custom css for payment (Optional)',
+                'class' => 'hyperpay_custom_style'
+
             ],
             'mailerrors' => [
                 'title' => __('Enable error logging by email?'),
@@ -181,7 +335,6 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         return $hyperpay_trans_type;
     }
 
-
     function get_hyperpay_connector_type()
     {
         $hyperpay_connector_type = [
@@ -192,14 +345,12 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         return $hyperpay_connector_type;
     }
 
-
-
     function receipt_page($order)
     {
         global $woocommerce;
         $order = new WC_Order($order);
         $error = false; // used to rerender the form in case of an error
-        
+
 
         if (isset($_GET['g2p_token'])) {
             $token = $_GET['g2p_token'];
@@ -209,70 +360,39 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         if (isset($_GET['id'])) {
             $token = $_GET['id'];
 
-            if ($this->testmode == 0) {
-                $url = $this->transaction_status_url;
-            } else {
-                $url = $this->transaction_status_url_test;
-            }
 
-            $url = str_replace('##TOKEN##', $token, $url);
-            $url .= "?entityId=" . $this->entityid;
+            $url = str_replace('##TOKEN##', $token, $this->transaction_status_url);
 
-            $auth =  ['Authorization:Bearer ' . $this->accesstoken];
-            $response = wp_remote_post($url, $auth);
+
+            $auth = [
+
+                'headers' => ['Authorization:Bearer ' . $this->accesstoken]
+            ];
+
+            $response = wp_remote_get($url, $auth);
+
 
             $resultJson = wp_remote_retrieve_body($response);
             $resultJson = json_decode($resultJson, true);
 
-            // print_r($resultJson);
-            // die;
-
-
-
-
-            $sccuess = 0;
-            $failed_msg = '';
-            $orderid = '';
 
             if (isset($resultJson['result']['code'])) {
-                $successCodePattern = '/^(000\.000\.|000\.100\.1|000\.[36])/';
-                $successManualReviewCodePattern = '/^(000\.400\.0|000\.400\.100)/';
-                //success status
-                if (preg_match($successCodePattern, $resultJson['result']['code']) || preg_match($successManualReviewCodePattern, $resultJson['result']['code'])) {
-                    $sccuess = 1;
-                } else {
-                    //fail case
-                    $failed_msg = $resultJson['result']['description'];
 
-                    if (isset($resultJson['card']['bin']) && $resultJson['result']['code'] == '800.300.401') {
-                        $searchBin = $resultJson['card']['bin'];
-                        if (in_array($searchBin, $this->blackBins)) {
-                            if ($this->is_arabic) {
-                                $failed_msg = 'عذرا! يرجى اختيار خيار الدفع "مدى" لإتمام عملية الشراء بنجاح.';
-                            } else {
-                                $failed_msg = 'Sorry! Please select "mada" payment option in order to be able to complete your purchase successfully.';
-                            }
-                        }
-                    }
-                }
-                $orderid = '';
+                $mada = $this->check_mada($resultJson);
+                $success = $mada['status'];
+                $failed_msg = $mada['msg'];
 
-                if (isset($resultJson['merchantTransactionId'])) {
-                    $orderid = $resultJson['merchantTransactionId'];
-                }
+
+
+                $orderid = $resultJson['merchantTransactionId'] ?? '';
+
 
                 $order_response = new WC_Order($orderid);
-                if ($this->is_arabic) {
-                    echo " <style>
-                        .woocommerce-error {
-                        text-align: right;
-                        }
-                        </style>
-                        ";
-                }
 
                 if ($order_response) {
-                    if ($sccuess == 1) {
+
+
+                    if ($success) {
                         WC()->session->set('hp_payment_retry', 0);
                         if ($order->status != 'completed') {
                             $order->update_status($this->order_status);
@@ -289,10 +409,10 @@ class Hyperpay_main_class extends WC_Payment_Gateway
                                 global $wpdb;
 
                                 $registrationIDs = $wpdb->get_results(
-                                        "SELECT * FROM {$wpdb->prefix}woocommerce_saving_cards
+                                    "SELECT * FROM {$wpdb->prefix}woocommerce_saving_cards
                                         WHERE registration_id ='$registrationID'
                                         and mode = '{$this->testmode}'"
-                                    );
+                                );
 
                                 if (count($registrationIDs) == 0) {
 
@@ -308,129 +428,67 @@ class Hyperpay_main_class extends WC_Payment_Gateway
                             }
 
                             $order->add_order_note($this->success_message . 'Transaction ID: ' . $uniqueId);
-
                         }
 
                         wp_redirect($this->get_return_url($order));
-
-                    } else {
-                        if (isset($_GET['hpOrderId'])) {
-                            $queryResponse = $this->queryTransactionReport($_GET['hpOrderId'], $this->entityid, $this->accesstoken);
-                            $queryResponse = json_decode($queryResponse, true);
-                            $this->processQueryResult($queryResponse, $order);
-                        } else {
-                            $order->add_order_note($this->failed_message . $failed_msg);
-                            $order->update_status('cancelled');
-
-                            if ($this->is_arabic) {
-                                wc_add_notice(__('حدث خطأ في عملية الدفع والسبب <br/>' . $failed_msg . '<br/>' . 'يرجى المحاولة مرة أخرى'), 'error');
-                            } else {
-                                wc_add_notice(__('(Transaction Error) ' . $failed_msg), 'error');
-                            }
-                            wc_print_notices();
-                            $error = true;
-                        }
                     }
-                } else {
-                    if (isset($_GET['hpOrderId'])) {
-                        $queryResponse = $this->queryTransactionReport($_GET['hpOrderId'], $this->entityid, $this->accesstoken);
-                        $queryResponse = json_decode($queryResponse, true);
-                        $this->processQueryResult($queryResponse, $order);
-                    } else {
-                        $order->add_order_note($this->failed_message);
-                        $order->update_status('cancelled');
-                        if ($this->is_arabic) {
-                            wc_add_notice(__('(حدث خطأ في عملية الدفع يرجى المحاولة مرة أخرى) '), 'error');
-                        } else {
-                            wc_add_notice(__('(Transaction Error) Error processing payment.'), 'error');
-                        }
-                        wc_print_notices();
-                        $error = true;
-                    }
-                }
-            } else {
-                if (isset($_GET['hpOrderId'])) {
-                    $queryResponse = $this->queryTransactionReport($_GET['hpOrderId'], $this->entityid, $this->accesstoken);
-                    $queryResponse = json_decode($queryResponse, true);
-                    $this->processQueryResult($queryResponse, $order);
-                } else {
-                    $order->add_order_note($this->failed_message);
-                    $order->update_status('cancelled');
-
-                    if ($this->is_arabic) {
-                        wc_add_notice(__('(حدث خطأ في عملية الدفع يرجى المحاولة مرة أخرى) '), 'error');
-                    } else {
-                        wc_add_notice(__('(Transaction Error) Error processing payment.'), 'error');
-                    }
-                    wc_print_notices();
-                    $error = true;
                 }
             }
+
+            $this->process_faild_payment($order, "{$this->failed_message}  $failed_msg");
         }
     }
 
     private function renderPaymentForm($order, $token = '')
     {
-     
+
         if ($token) {
-            $token = $token;
 
-            $order_id = $order->get_id();
-
-            if ($this->testmode == 0) {
-                $scriptURL = $this->script_url;
-            } else {
-                $scriptURL = $this->script_url_test;
-            }
-
+            $scriptURL = $this->script_url;
             $scriptURL .= $token;
 
-            $payment_brands = implode(' ', $this->brands);
+            $payment_brands = $this->brands;
+            if (is_array($this->brands))
+                $payment_brands = implode(' ', $this->brands);
+
             $postbackURL = $order->get_checkout_payment_url(true);
-            
+
             if (parse_url($postbackURL, PHP_URL_QUERY)) {
                 $postbackURL .= '&';
             } else {
                 $postbackURL .= '?';
             }
             $postbackURL .= 'hpOrderId=' . $order->get_id();
-            
+
             $dataObj = [
-                'is_arabic' => $this->is_arabic,
-                'style' => $this->payment_style,
-                'tokenization'=>'enable',
-                'postbackURL' => $postbackURL,
-                'payment_brands' => $payment_brands
+                'is_arabic' => esc_js($this->is_arabic),
+                'style' => esc_js($this->payment_style),
+                'tokenization' => esc_js($this->tokenization),
+                'postbackURL' => esc_url($postbackURL),
+                'payment_brands' => esc_js($payment_brands)
             ];
 
 
+            wp_enqueue_script('wpwl_hyperpay_script', $scriptURL, null, null);
 
-            if ($this->is_arabic) {
-                echo '<style>
-                                      
-          </style>';
-            };
+            wp_enqueue_script('hyperpay_script',  HYPERPAY_PLUGIN_DIR . '/assets/js/script.js', ['jquery'], false, true);
+            wp_localize_script('hyperpay_script', 'dataObj', $dataObj);
 
-            wp_enqueue_script('wpwl_hyperpay_script', $scriptURL , null , null);
-            wp_enqueue_script('hyperpay_script',  HYPERPAY_PLUGIN_DIR . '/assets/js/script.js' , ['jquery'] , false , true);
-
-            wp_localize_script('hyperpay_script' , 'dataObj', $dataObj);
-           
-
+            echo '<style>' . wp_unslash($this->custom_style) . '</style>';
         }
     }
+
 
     /**
      * Process the payment and return the result
      * */
     public function process_payment($order_id)
     {
-        global $woocommerce;
-
-
         $order = new WC_Order($order_id);
+        $customerID = $order->get_customer_id();
 
-        if ($order->get_customer_id() > 0 && get_current_user_id() == $order->get_customer_id()) {
+
+        if ($customerID > 0 && get_current_user_id() == $customerID) {
             //Registered
             $this->is_registered_user = true;
         } else {
@@ -440,16 +498,8 @@ class Hyperpay_main_class extends WC_Payment_Gateway
 
 
         $orderAmount = number_format($order->get_total(), 2, '.', '');
-
-        $orderid = $order_id;
-
-        $accesstoken = $this->accesstoken;
-        $entityid = $this->entityid;
-        $mode = $this->trans_mode;
-        $type = $this->trans_type;
         $amount = number_format(round($orderAmount, 2), 2, '.', '');
         $currency = get_woocommerce_currency();
-        $transactionID = $orderid;
         $firstName = $order->get_billing_first_name();
         $family = $order->get_billing_last_name();
         $street = $order->get_billing_address_1();
@@ -470,59 +520,68 @@ class Hyperpay_main_class extends WC_Payment_Gateway
             $state = $city;
         }
 
-        $data = "entityId=$entityid" .
-            "&amount=$amount" .
-            "&currency=$currency" .
-            "&paymentType=$type" .
-            "&merchantTransactionId=$transactionID" .
-            "&customer.email=$email";
+        $data = [
+            'headers' => [
+                "Authorization" => "Bearer {$this->accesstoken}"
+            ],
+            'body' => [
+                "entityId" => $this->entityid,
+                "amount" => $amount,
+                "currency" => $currency,
+                "paymentType" => $this->trans_type,
+                "merchantTransactionId" => $order_id,
+                "customer.email" => $email,
+                "notificationUrl" =>  $order->get_checkout_payment_url(true),
+                "customParameters[bill_number]" => $order_id,
+                "customParameters[branch_id]" => '1',
+                "customParameters[teller_id]" => '1',
+                "customParameters[device_id]" => '1',
+            ]
+        ];
 
-        $data .= '&notificationUrl=' . $order->get_checkout_payment_url(true);
+        echo "<pre>";
+        $this->setExtraData($order);
 
-        if ($this->testmode == 0) {
-            $url = $this->token_url;
-        } else {
-            $url = $this->token_url_test;
-            $data .= "&testMode=EXTERNAL";
+        $url = $this->token_url;
+
+        if ($this->testmode) {
+            $data["testMode"] = "EXTERNAL";
         }
 
 
         if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($firstName) == false)) {
-            $data .= "&customer.givenName=" . $firstName;
+            $data["customer.givenName"] = $firstName;
         }
 
         if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($family) == false)) {
-            $data .= "&customer.surname=" . $family;
+            $data["customer.surname"] = $family;
         }
 
         if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($street) == false)) {
-            $data .= "&billing.street1=" . $street;
+            $data["billing.street1"] = $street;
         }
 
         if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($city) == false)) {
-            $data .= "&billing.city=" . $city;
+            $data["billing.city"] = $city;
         }
 
         if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($state) == false)) {
-            $data .= "&billing.state=" . $state;
+            $data["billing.state"] = $state;
         }
 
         if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($country) == false)) {
-            $data .= "&billing.country=" . $country;
+            $data["billing.country"] = $country;
         }
 
-        $data .= "&customParameters[branch_id]=1";
-        $data .= "&customParameters[teller_id]=1";
-        $data .= "&customParameters[device_id]=1";
-        $data .= "&customParameters[bill_number]=$transactionID";
+
 
 
         if ($this->tokenization == 'enable' && $this->is_registered_user == true) {
 
-            //$data .=  "&createRegistration=true";
             global $wpdb;
-            $customerID = $order->get_customer_id();
-            $registrationIDs = $wpdb->get_results("SELECT * FROM wp_woocommerce_saving_cards WHERE customer_id =$customerID and mode = '" . $this->testmode . "'");
+
+            $data["createRegistration"] = "true";
+            $registrationIDs = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_saving_cards WHERE customer_id =$customerID and mode ='{$this->testmode}'");
             if ($registrationIDs) {
 
                 foreach ($registrationIDs as $key => $id) {
@@ -531,40 +590,24 @@ class Hyperpay_main_class extends WC_Payment_Gateway
             }
         }
 
+        $response = wp_remote_post($url, $data);
 
-        $customerID = $order->get_customer_id();
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization:Bearer ' . $accesstoken
-        ]);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $response = curl_exec($ch);
-
-        if (curl_errno($ch)) {
-            wc_add_notice(__('Hyperpay error:', 'woocommerce') . "Problem with $url, $php_errormsg", 'error');
-        }
-        curl_close($ch);
-        if ($response === false) {
-            wc_add_notice(__('Hyperpay error:', 'woocommerce') . "Problem reading data from $url, $php_errormsg", 'error');
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) != 200) {
+            wc_add_notice(__('Hyperpay error:', 'woocommerce') . "Problem with $url", 'error');
         }
 
-        $result = json_decode($response);
+
+        $response = wp_remote_retrieve_body($response);
+        $result = json_decode($response, true);
 
 
-        $token = '';
-
-        if (isset($result->id)) {
-            $token = $result->id;
+        if (array_key_exists('id', $result)) {
+            $token = $result['id'];
         }
 
         return [
             'result' => 'success',
-            'token' => $token,
+            'token' => $token ?? null,
             'redirect' => add_query_arg('g2p_token', $token, $order->get_checkout_payment_url(true))
         ];
     }
@@ -600,39 +643,82 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         return preg_match("/\p{Latin}+/u", $text);
     }
 
-    public function queryTransactionReport($merchantTrxId, $entityid, $accesstoken)
+    public function queryTransactionReport($merchantTrxId)
     {
-        if ($this->testmode == 0) {
-            $url = $this->query_url;
-        } else {
-            $url = $this->query_url_test;
-        }
-        $url .= "?entityId=$entityid";
-        $url .= "&merchantTransactionId=$merchantTrxId";
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization:Bearer ' . $accesstoken
-        ]);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // this should be set to true in production
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $responseData = curl_exec($ch);
-        if (curl_errno($ch)) {
-            return curl_error($ch);
+        $url =  $this->query_url . "&merchantTransactionId=$merchantTrxId";
+
+
+        $response = wp_remote_get($url, ["headers" => ["Authorization" => "Bearer {$this->accesstoken}"]]);
+
+        $response = wp_remote_retrieve_body($response);
+        $response = json_decode($response, true);
+
+
+        return $response;
+    }
+
+
+    public function check_mada($resultJson)
+    {
+
+        $success = false;
+        $failed_msg = '';
+
+        $successCodePattern = '/^(000\.000\.|000\.100\.1|000\.[36])/';
+        $successManualReviewCodePattern = '/^(000\.400\.0|000\.400\.100)/';
+        //success status
+        if (preg_match($successCodePattern, $resultJson['result']['code']) || preg_match($successManualReviewCodePattern, $resultJson['result']['code'])) {
+            $success = 1;
+        } else {
+            //fail case
+            $failed_msg = $resultJson['result']['description'];
+
+            if (isset($resultJson['card']['bin']) && $resultJson['result']['code'] == '800.300.401') {
+                $searchBin = $resultJson['card']['bin'];
+                if (in_array($searchBin, $this->blackBins)) {
+                    $failed_msg = 'Sorry! Please select "mada" payment option in order to be able to complete your purchase successfully.';
+                    if ($this->is_arabic) {
+                        $failed_msg = 'عذرا! يرجى اختيار خيار الدفع "مدى" لإتمام عملية الشراء بنجاح.';
+                    }
+                }
+            }
         }
-        curl_close($ch);
-        return $responseData;
+
+        return [
+            'status' => $success,
+            'msg' => $failed_msg
+        ];
+    }
+
+
+    public function process_faild_payment($order, $msg)
+    {
+
+        if (isset($_GET['hpOrderId'])) {
+            $queryResponse = $this->queryTransactionReport($_GET['hpOrderId']);
+            if (array_key_exists('payments', $queryResponse))
+                $this->processQueryResult($queryResponse, $order);
+        }
+
+
+        $order->add_order_note($msg);
+        $order->update_status('cancelled');
+
+        if ($this->is_arabic) {
+            wc_add_notice(__('حدث خطأ في عملية الدفع والسبب <br/>' . $msg . '<br/>' . 'يرجى المحاولة مرة أخرى'), 'error');
+        } else {
+            wc_add_notice(__('(Transaction Error) ' . $msg), 'error');
+        }
+        wc_print_notices();
     }
 
     public function processQueryResult($resultJson, $order)
     {
         global $woocommerce;
         $success = 0;
+
         $payment = end($resultJson['payments']); // et the last p
-
-
 
         if (isset($payment['result']['code'])) {
             $successCodePattern = '/^(000\.000\.|000\.100\.1|000\.[36])/';
@@ -663,17 +749,13 @@ class Hyperpay_main_class extends WC_Payment_Gateway
                     $order->add_order_note($this->success_message . 'Transaction ID: ' . $uniqueId);
                     wp_redirect($this->get_return_url($order));
                 }
-            } else {
-                $order->add_order_note($this->failed_message . $failed_msg);
-                $order->update_status('cancelled');
-
-                if ($this->is_arabic) {
-                    wc_add_notice(__('حدث خطأ في عملية الدفع والسبب <br/>' . $failed_msg . '<br/>' . 'يرجى المحاولة مرة أخرى'), 'error');
-                } else {
-                    wc_add_notice(__('(Transaction Error) ' . $failed_msg), 'error');
-                }
-                wc_print_notices();
             }
         }
+    }
+
+    public function setExtraData($order)
+    {
+        print_r($order -> id) ;
+        return [];
     }
 }

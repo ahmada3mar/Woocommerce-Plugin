@@ -1,0 +1,22 @@
+.hyperpay-customLabel {
+    direction: rtl;
+}
+
+.wpwl-group {
+    text-align: right !important;
+    text-align: -moz-right !important;
+    text-align: -webkit-right !important;
+}
+
+.woocommerce-error {
+    text-align: right !important;
+    text-align: -moz-right !important;
+    text-align: -webkit-right !important;
+}
+
+
+.input-error-msg {
+    text-align: right !important;
+    text-align: -moz-right !important;
+    text-align: -webkit-right !important;
+}
