@@ -8,6 +8,7 @@ class hyperpay_main
 	 */
     protected static $HP_gateways = [
         // Add Class Here
+		'WC_Payment_name_Gateway',
         'WC_Hyperpay_Gateway',
         'WC_Hyperpay_STCPay_Gateway',
         'WC_Hyperpay_Mada_Gateway',
