@@ -1,3 +1,5 @@
+<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://www.hyperpay.com/wp-content/uploads/2020/04/cropped-011-300x155.png" width="400"></a></p>
+
 # HyperPay
 
 Hyperpay Paymentgatways plugin for Wordpress and Woocommerce
@@ -55,6 +57,9 @@ class WC_Payment_name_Gateway extends Hyperpay_main_class
    }
 }
 ```
+#### Finally add logo to your payment by add *BRAND-logo.png* file into :
+Path : \asetes\images\BRAND-logo.png
+>notice the image file name SHOULD be brand name UPPERCASE concat with "-logo.png" lowercase
 # Properties
 ## 1- public $id <string>
 Every payment have a unique id 
@@ -105,10 +110,55 @@ by default return
 
 # customize Admin setting fields
 
-## A. start from zero \
-overwrite init_form_fields() method
+## A. start from zero 
+overwrite  **init_form_fields()** method
 
 ```php
-
+    public function init_form_fields(): void
+    {
+        $this->form_fields = [
+            'enabled' => [
+                'title' => __('Enable/Disable'),
+                'type' => 'checkbox',
+                'label' => __('Enable Payment Module.'),
+                'default' => 'no'
+            ],
+            'testmode' => [
+                'title' => __('Test mode'),
+                'type' => 'select',
+                'options' => ['0' => __('Off'), '1' => __('On')]
+            ],
+            'title' => [
+                'title' => __('Title:'),
+                'type' => 'text',
+                'description' => ' ' . __('This controls the title which the user sees during checkout.'),
+                'default' => $this->title ?? ($this->is_arabic ? __('بطاقة ائتمانية') : __('Credit Card'))
+            ]
+                 ]
+      }
 
 ```
+or you can easily add/remove existed field
+
+path: **\gateways\WC_Paymen_name.php**
+```php
+public function __construct()
+{
+   $this->form_fields['new_filed'] = [
+                                       'title'=> 'new filed',
+                                       'type'=>'text'
+                                       'description'=> 'this is new filed'
+                                     
+                                      ]
+}
+
+```
+
+for more information about the syntax of writing filed seed this [documentation](https://woocommerce.com/document/payment-gateway-api/).
+> don't forget to register you filed in __construct() to store and retrieve the value 
+
+```php
+$this->new_filed = $this->get_option('new_filed');
+```
+> *Remember*: registration filed after initiate it 
+* > always parent::__construct() in the first line .  
