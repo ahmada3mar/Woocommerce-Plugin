@@ -1,16 +1,30 @@
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://www.hyperpay.com/wp-content/uploads/2020/04/cropped-011-300x155.png" width="400"></a></p>
 
-
 # HyperPay
 
 Hyperpay Paymentgatways plugin for Wordpress and Woocommerce
+
+### Resources 
+* [Woocommerce Documentation ](https://woocommerce.com/document/payment-gateway-api/)
+* [Wordpress Plugin Documentation ](https://developer.wordpress.org/plugins/)
+
+### Indexes 
+* [Installation ](#installation)
+* [Add a new payment](#add-a-new-payment)
+* [Properties](#properties)
+* [Methods](#methods)
+* [customize Admin setting fields](#customize-admin-setting-fields)
+* [JavaScript & CSS](#customize-admin-setting-fields)(#javascript-and-css)
+
+
+
 ## Installation
 
 Clone repo
 ```bash
 git clone http://gitlab.hyperpay.com/plugins/woocommerce_new.git
 ```
-[hhh](#customize-admin-setting-fields)
+
 ## Add a new payment
 
 ```bash
@@ -162,4 +176,17 @@ for more information about the syntax of writing filed seed this [documentation]
 $this->new_filed = $this->get_option('new_filed');
 ```
 > *Remember*: registration filed after initiate it 
-* > always parent::__construct() in the first line .  
+* > always parent::__construct() in the first line .   
+
+## JavaScript and CSS 
+by default there are already js & css files included to the project, you can add and modify your script or css into these files.
+* JavaScript 
+  - \assets\js\script.js
+   >this file run and include all time the payment run (all pages)
+  - \assets\js\admin.js
+  > this file run only on admin page setting exactly when edit you paymentsetting
+* CSS
+   -\assets\css\style.css
+   > contain all styles
+   -\assets\css\style-rtl.css
+    > included only when website locale is arabic
