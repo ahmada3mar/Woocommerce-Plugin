@@ -1,4 +1,4 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://www.hyperpay.com/wp-content/uploads/2020/04/cropped-011-300x155.png" width="400"></a></p>
+<p align="center"><a href="https://hyperpay.com" target="_blank"><img src="https://www.hyperpay.com/wp-content/uploads/2020/04/cropped-011-300x155.png" width="400"></a></p>
 
 # HyperPay
 
@@ -186,7 +186,7 @@ by default there are already js & css files included to the project, you can add
   - \assets\js\admin.js
   > this file run only on admin page setting exactly when edit you paymentsetting
 * CSS
-   -\assets\css\style.css
-   > contain all styles
-   -\assets\css\style-rtl.css
-    > included only when website locale is arabic
+  -\assets\css\style.css
+  > contain all styles
+  -\assets\css\style-rtl.css
+  > included only when website locale is arabic
