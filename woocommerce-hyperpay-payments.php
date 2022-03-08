@@ -5,6 +5,8 @@
  * Plugin URI:
  * Description: Hyperpay is the first one stop-shop service company for online merchants in MENA Region.<strong>If you have any question, please <a href="http://www.hyperpay.com/" target="_new">contact Hyperpay</a>.</strong>
  * Version:     1.7
+ * Text Domain: woocommerce-hyperpay-payments
+ * Domain Path: /languages
  * Author:      Hyperpay Team
  * Author URI:  https://www.hyperpay.com
  * Requires at least: 5.3
@@ -48,3 +50,13 @@ if (str_starts_with(get_locale(), 'ar'))
  */
 
 add_action('plugins_loaded',  ['hyperpay_main', 'load']);
+
+
+/*
+* Load plugin textdomain.
+*/
+function plugin_load_textdomain() {
+load_plugin_textdomain( 'woocommerce-hyperpay-payments', false, basename( dirname( __FILE__ ) ) . '/languages' );
+}
+
+add_action( 'init', 'plugin_load_textdomain' );

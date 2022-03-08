@@ -70,12 +70,6 @@ class Hyperpay_main_class extends WC_Payment_Gateway
      */
     protected $query_url = "https://oppwa.com/v1/query";
 
-    /**
-     * default faild message 
-     * @var string
-     */
-    protected $failed_message =  'Your transaction has been declined.';
-    protected $success_message = 'Your payment has been processed successfully.';
 
     /**
      * payment styles that will show in settings 
@@ -84,8 +78,8 @@ class Hyperpay_main_class extends WC_Payment_Gateway
      * 
      */
     protected  $hyperpay_payment_style = [
-        'card' => 'Card',
-        'plain' => 'Plain'
+        'card' =>  'Card',
+        'plain' =>  'Plain'
     ];
 
     protected $dataTosend = [];
@@ -101,7 +95,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         $this->testmode = $this->get_option('testmode'); // <== check if payments on test mode 
         $this->title = $this->get_option('title'); // <== get title from setting
         $this->trans_type = $this->get_option('trans_type'); // <== get transaction type [DB / Pre-Auth] from setting
-        $this->connector_type = $this->get_option('connector_type'); // <== get transaction connector [ MEGS / VISA ] from setting
+        $this->trans_mode = $this->get_option('trans_mode'); // <== get transaction mode [INTERNAL / EXTERNAL / LIVE] from setting
         $this->accesstoken = $this->get_option('accesstoken'); // <== get accesstoke from setting
         $this->entityid = $this->get_option('entityId'); // <== get entityId from setting
         $this->brands = $this->get_option('brands'); // <== get brands from setting
@@ -113,11 +107,6 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         $this->redirect_page_id = $this->get_option('redirect_page_id'); // <== after order complete redirect to selected page
         $this->custom_style = $this->get_option('custom_style'); // <== get custom style from setting
 
-
-        if ($this->is_arabic) {
-            $this->failed_message = 'تم رفض العملية ';
-            $this->success_message = 'تم إجراء عملية الدفع بنجاح.';
-        }
 
         /**
          * if test mode is one 
@@ -132,6 +121,13 @@ class Hyperpay_main_class extends WC_Payment_Gateway
 
         $this->query_url .= "?entityId=" . $this->entityid;
         $this->transaction_status_url .= "?entityId=" . $this->entityid;
+
+        /**
+         * default faild message 
+         * @var string
+         */
+        $this->failed_message =  __('Your transaction has been declined.' ,  'woocommerce-hyperpay-payments');
+        $this->success_message = __('Your payment has been processed successfully.' , 'woocommerce-hyperpay-payments') ;
 
         /**
          * overwrite default update function 
@@ -238,83 +234,83 @@ class Hyperpay_main_class extends WC_Payment_Gateway
 
         $this->form_fields = [
             'enabled' => [
-                'title' => __('Enable/Disable'),
+                'title' => __('Enable/Disable', 'woocommerce-hyperpay-payments'),
                 'type' => 'checkbox',
-                'label' => __('Enable Payment Module.'),
+                'label' => __('Enable Payment Module.', 'woocommerce-hyperpay-payments'),
                 'default' => 'no'
             ],
             'testmode' => [
-                'title' => __('Test mode'),
+                'title' => __('Test mode', 'woocommerce-hyperpay-payments'),
                 'type' => 'select',
-                'options' => ['0' => __('Off'), '1' => __('On')]
+                'options' => ['0' => __('Off', 'woocommerce-hyperpay-payments' ), '1' => __('On', 'woocommerce-hyperpay-payments')]
             ],
             'title' => [
-                'title' => __('Title:'),
+                'title' => __('Title:' , 'woocommerce-hyperpay-payments'),
                 'type' => 'text',
-                'description' => ' ' . __('This controls the title which the user sees during checkout.'),
-                'default' => $this->title ?? ($this->is_arabic ? __('بطاقة ائتمانية') : __('Credit Card'))
+                'description' => ' ' . __('This controls the title which the user sees during checkout.', 'woocommerce-hyperpay-payments'),
+                'default' => $this->method_title ??  __('Credit Card', 'woocommerce-hyperpay-payments')
             ],
             'trans_type' => [
-                'title' => __('Transaction type'),
+                'title' => __('Transaction type', 'woocommerce-hyperpay-payments'),
                 'type' => 'select',
                 'options' => $this->get_hyperpay_trans_type(),
             ],
-            'connector_type' => [
-                'title' => __('Connector Type'),
+            'trans_mode' => array(
+                'title' => __('Transaction mode', 'woocommerce-hyperpay-payments'),
                 'type' => 'select',
-                'options' => $this->get_hyperpay_connector_type(),
-            ],
+                'options' => $this->get_hyperpay_trans_mode(),
+                'description' => ''
+            ),
             'accesstoken' => [
-                'title' => __('Access Token'),
+                'title' => __('Access Token', 'woocommerce-hyperpay-payments'),
                 'type' => 'text',
             ],
             'entityId' => [
-                'title' => __('Entity ID'),
+                'title' => __('Entity ID', 'woocommerce-hyperpay-payments'),
                 'type' => 'text',
             ],
             'tokenization' => [
-                'title' => __('Tokenization'),
+                'title' => __('Tokenization', 'woocommerce-hyperpay-payments'),
                 'type' => 'select',
                 'options' => $this->get_hyperpay_tokenization(),
             ],
             'brands' => [
-                'title' => __('Brands'),
+                'title' => __('Brands', 'woocommerce-hyperpay-payments'),
                 'class' => count($this->supported_brands) !== 1 ?:  'disabled',
                 'type' => count($this->supported_brands) > 1 ? 'multiselect' : 'select',
                 'options' => $this->supported_brands,
             ],
             'payment_style' => [
-                'title' => __('Payment Style'),
+                'title' => __('Payment Style', 'woocommerce-hyperpay-payments'),
                 'type' => 'select',
                 'class' => count($this->hyperpay_payment_style) !== 1 ?:  'disabled',
                 'options' => $this->hyperpay_payment_style,
                 'default' => 'plain'
             ],
             'custom_style' => [
-                'title' => __('Custom Style'),
+                'title' => __('Custom Style', 'woocommerce-hyperpay-payments'),
                 'type' => 'textarea',
                 'description' => 'Input custom css for payment (Optional)',
                 'class' => 'hyperpay_custom_style'
-
             ],
             'mailerrors' => [
-                'title' => __('Enable error logging by email?'),
+                'title' => __('Enable error logging by email?', 'woocommerce-hyperpay-payments'),
                 'type' => 'checkbox',
                 'label' => __('Yes'),
                 'default' => 'no',
                 'description' => __('If checked, an email will be sent to ' . get_bloginfo('admin_email') . ' whenever a callback fails.'),
             ],
             'redirect_page_id' => [
-                'title' => __('Return Page'),
+                'title' => __('Return Page', 'woocommerce-hyperpay-payments'),
                 'type' => 'select',
                 'options' => $this->get_pages('Select Page'),
-                'description' => "URL of success page"
+                'description' => __("success page", 'woocommerce-hyperpay-payments')
             ],
             'order_status' => [
-                'title' => __('Status Of Order'),
+                'title' => __('Status Of Order', 'woocommerce-hyperpay-payments'),
                 'type' => 'select',
                 'options' => $this->get_order_status(),
-                'description' => "select order status after success transaction."
+                'description' => __("select order status after success transaction." , 'woocommerce-hyperpay-payments')
             ]
         ];
     }
@@ -329,8 +325,8 @@ class Hyperpay_main_class extends WC_Payment_Gateway
     {
         $order_status = [
 
-            'processing' => 'Processing',
-            'completed' => 'Completed'
+            'processing' =>  __('Processing', 'woocommerce-hyperpay-payments') ,
+            'completed' =>  __('Completed', 'woocommerce-hyperpay-payments')
         ];
 
         return $order_status;
@@ -344,8 +340,8 @@ class Hyperpay_main_class extends WC_Payment_Gateway
     function get_hyperpay_tokenization(): array
     {
         $hyperpay_tokenization = [
-            'enable' => 'Enable',
-            'disable' => 'Disable'
+            'enable' =>  __('Enable', 'woocommerce-hyperpay-payments'),
+            'disable' =>  __('Disable', 'woocommerce-hyperpay-payments')
         ];
 
         return $hyperpay_tokenization;
@@ -367,18 +363,20 @@ class Hyperpay_main_class extends WC_Payment_Gateway
     }
 
     /**
-     *  to fill connector_type select fiels
+     *  to fill trans_mode select fiels
      * 
      * @return array
      */
-    function get_hyperpay_connector_type(): array
+    function get_hyperpay_trans_mode(): array
     {
-        $hyperpay_connector_type = [
-            'MPGS' => 'MPGS',
-            'VISA_ACP' => 'VISA_ACP'
+        $hyperpay_trans_type = [
+            'INTERNAL' => 'Internal',
+            'EXTERNAL' => 'External',
+            'LIVE' => 'Live'
         ];
 
-        return $hyperpay_connector_type;
+
+        return $hyperpay_trans_type;
     }
 
     /**
@@ -391,6 +389,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
     {
 
         global $woocommerce;
+        $error_code = '';
         $order = new WC_Order($order_id);
 
 
@@ -476,26 +475,26 @@ class Hyperpay_main_class extends WC_Payment_Gateway
                                 }
                             }
 
-                            $order->add_order_note($this->success_message . 'Transaction ID: ' . esc_html($uniqueId));
+                            $order->add_order_note($this->success_message . __('Transaction ID: ' , 'woocommerce-hyperpay-payments') . esc_html($uniqueId));
                         }
 
                         wp_redirect($this->get_return_url($order));
                     }
                 }
+                $error_code = $resultJson['result']['code']; 
             }
-
-            $this->process_faild_payment($order, "{$this->failed_message}  $failed_msg");
+            $this->process_faild_payment($order, "{$this->failed_message} $error_code :  $failed_msg");
         }
     }
 
     /**
      * 
      * render CopyAndPay form
-     * @param object $order
+     * @param WC_Order $order
      * @param string $token
      * @return void
      */
-    private function renderPaymentForm(object $order, string $token): void
+    private function renderPaymentForm(WC_Order $order, string $token): void
     {
 
         $scriptURL = $this->script_url;
@@ -582,6 +581,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         }
 
         // set data to post 
+        $url = $this->token_url;
         $data = [
             'headers' => [
                 "Authorization" => "Bearer {$this->accesstoken}"
@@ -595,46 +595,36 @@ class Hyperpay_main_class extends WC_Payment_Gateway
                 "customer.email" => $email,
                 "notificationUrl" =>  $order->get_checkout_payment_url(true),
                 "customParameters[bill_number]" => $order_id,
+                "customer.givenName" => $firstName,
+                "customer.surname" => $family,
+                "billing.street1" => $street,
+                "billing.city" => $city,
+                "billing.state" => $state,
+                "billing.country" => $country,
                 "customParameters[branch_id]" => '1',
                 "customParameters[teller_id]" => '1',
                 "customParameters[device_id]" => '1',
             ]
         ];
 
-
-
-        $url = $this->token_url;
-
         if ($this->testmode) {
-            $data["testMode"] = "EXTERNAL";
+            $data["testMode"] = $this->trans_mode;
         }
 
+        $data_to_validate = [
+            $firstName,
+            $family,
+            $street,
+            $city,
+            $state,
+            $country
+        ];
 
-        if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($firstName) == false)) {
-            $data["customer.givenName"] = $firstName;
-        }
-
-        if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($family) == false)) {
-            $data["customer.surname"] = $family;
-        }
-
-        if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($street) == false)) {
-            $data["billing.street1"] = $street;
-        }
-
-        if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($city) == false)) {
-            $data["billing.city"] = $city;
-        }
-
-        if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($state) == false)) {
-            $data["billing.state"] = $state;
-        }
-
-        if (!($this->connector_type == 'MPGS' && $this->isThisEnglishText($country) == false)) {
-            $data["billing.country"] = $country;
-        }
-
-
+        /**
+         * 
+         * validate data to prevent arabic character 
+         */
+        $this->validate_form($data_to_validate);
 
 
         if ($this->tokenization == 'enable' && $this->is_registered_user == true) {
@@ -658,7 +648,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         $response = wp_remote_post($url, $data);
 
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) != 200) {
-            wc_add_notice(__('Hyperpay error:', 'woocommerce') . "Problem with $url", 'error');
+            wc_add_notice(__("Problem with payments ", 'woocommerce-hyperpay-payments') , 'error');
         }
 
 
@@ -713,13 +703,25 @@ class Hyperpay_main_class extends WC_Payment_Gateway
     }
 
     /**
-     * check if entered name is english or not
-     * @param string
-     * @return bool
+     * check if all data valid to post {English Charachter}
+     * @param array
+     * @return void
      */
-    function isThisEnglishText(string $text): bool
+    function validate_form(array $data): void
     {
-        return preg_match("/\p{Latin}+/u", $text);
+        $errors = false;
+
+
+        foreach ($data as $field) {
+            if (!preg_match("/^(?=.*[A-Za-z0-9].*[A-Za-z0-9])[\s\'\,{\}\[\]A-Za-z]*$/", $field))
+                $errors = true;
+        }
+
+
+        if ($errors) {
+            wc_add_notice('<strong>*' .__('All Information Should be In English' , 'woocommerce-hyperpay-payments')  .'</strong>', 'error');
+            throw new Exception();
+        }
     }
 
     /**
@@ -768,10 +770,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
             if (isset($resultJson['card']['bin']) && $resultJson['result']['code'] == '800.300.401') {
                 $searchBin = $resultJson['card']['bin'];
                 if (in_array($searchBin, $this->blackBins)) {
-                    $failed_msg = 'Sorry! Please select "mada" payment option in order to be able to complete your purchase successfully.';
-                    if ($this->is_arabic) {
-                        $failed_msg = 'عذرا! يرجى اختيار خيار الدفع "مدى" لإتمام عملية الشراء بنجاح.';
-                    }
+                    $failed_msg = __('Sorry! Please select "mada" payment option in order to be able to complete your purchase successfully.', 'woocommerce-hyperpay-payments');
                 }
             }
         }
@@ -785,11 +784,11 @@ class Hyperpay_main_class extends WC_Payment_Gateway
 
     /**
      * handel faild pyments 
-     * @param object $order
+     * @param WC_Order $order
      * @param string $messege
      * @return void
      */
-    public function process_faild_payment(object $order, string $msg): void
+    public function process_faild_payment(WC_Order $order, string $msg): void
     {
 
         if (isset($_GET['hpOrderId'])) {
@@ -802,11 +801,8 @@ class Hyperpay_main_class extends WC_Payment_Gateway
         $order->add_order_note($msg);
         $order->update_status('cancelled');
 
-        if ($this->is_arabic) {
-            wc_add_notice(__('حدث خطأ في عملية الدفع والسبب <br/>' . $msg . '<br/>' . 'يرجى المحاولة مرة أخرى'), 'error');
-        } else {
-            wc_add_notice(__('(Transaction Error) ' . $msg), 'error');
-        }
+        wc_add_notice(__('Your transaction has been declined.' , 'woocommerce-hyperpay-payments'), 'error');
+        
         wc_print_notices();
     }
 
@@ -814,10 +810,10 @@ class Hyperpay_main_class extends WC_Payment_Gateway
      * check the result of transaction if success of faild 
      * 
      * @param array $resultJson
-     * @param object $order
+     * @param WC_Order $order
      * @return void
      */
-    public function processQueryResult(array $resultJson, object $order): void
+    public function processQueryResult(array $resultJson, WC_Order $order): void
     {
         global $woocommerce;
         $success = 0;
@@ -833,7 +829,7 @@ class Hyperpay_main_class extends WC_Payment_Gateway
                     $order->update_status($this->order_status);
                     $woocommerce->cart->empty_cart();
                     $uniqueId = $payment['id'];
-                    $order->add_order_note($this->success_message . 'Transaction ID: ' . esc_html($uniqueId));
+                    $order->add_order_note($this->success_message . __('Transaction ID: ', 'woocommerce-hyperpay-payments') . esc_html($uniqueId));
                     wp_redirect($this->get_return_url($order));
                 }
             }
@@ -842,10 +838,10 @@ class Hyperpay_main_class extends WC_Payment_Gateway
 
     /**
      * set customParameters of requested data 
-     * @param object 
+     * @param WC_Order $order
      * @return array
      */
-    public function setExtraData(object $order): array
+    public function setExtraData(WC_Order $order): array
     {
         return [];
     }

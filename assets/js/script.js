@@ -16,7 +16,7 @@ jQuery('.order_details').after(form)
  */
 if (!window.ApplePaySession && dataObj.payment_brands.includes('APPLEPAY')) {
     jQuery('.woocommerce-notices-wrapper')
-    .append('<ul class="woocommerce-error" role="alert"><li>Your Device Dose Not Support ApplePay</li></ul>')
+    .append(`<ul class="woocommerce-error" role="alert"><li> ${  dataObj.is_arabic ? 'جهازك او متصفحك لا يدعم الدفع عن طريق ابل' : 'Your Device Or Browser Dose Not Support ApplePay' } </li></ul>`)
  }
 
  /**
@@ -36,6 +36,7 @@ var wpwlOptions = {
     },
     "style": dataObj.style, // <== this style comes from settings page of gateways
     "paymentTarget": "_top",
+    "locale" : dataObj.is_arabic ? 'ar' : 'en',
     "registrations": {
         "hideInitialPaymentForms": "true",
         "requireCvv": "true"

@@ -22,7 +22,7 @@ and add the payment class to **$HP_gateways** <array> inside **\includes\class-i
 ```php
     protected static $HP_gateways = [
         // Add Class Here
-		'WC_Payment_name_Gateway', // <== your payment
+		    'WC_Payment_name_Gateway', // <== your payment
         'WC_Hyperpay_Gateway',
         'WC_Hyperpay_STCPay_Gateway',
         'WC_Hyperpay_Mada_Gateway',

@@ -1,0 +1,164 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: woocommerce-hyperpay-payments\n"
+"POT-Creation-Date: 2022-03-08 12:21+0300\n"
+"PO-Revision-Date: 2022-03-08 14:24+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
+"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5);\n"
+"X-Generator: Poedit 3.0.1\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: includes/Hyperpay_main_class.php:129
+msgid "Your transaction has been declined."
+msgstr "تم رفض الحركة يرجى التأكد من المعلومات المدخلة."
+
+#: includes/Hyperpay_main_class.php:130
+msgid "Your payment has been processed successfully."
+msgstr "تمت العملية بنجاح."
+
+#: includes/Hyperpay_main_class.php:237
+msgid "Enable/Disable"
+msgstr "تمكين / تعطيل"
+
+#: includes/Hyperpay_main_class.php:239
+msgid "Enable Payment Module."
+msgstr "تفعيل طريقة الدفع."
+
+#: includes/Hyperpay_main_class.php:243
+msgid "Test mode"
+msgstr "وضع الاختبار"
+
+#: includes/Hyperpay_main_class.php:245
+msgid "Off"
+msgstr "ايقاف"
+
+#: includes/Hyperpay_main_class.php:245
+msgid "On"
+msgstr "تشغيل"
+
+#: includes/Hyperpay_main_class.php:248
+msgid "Title:"
+msgstr "الاسم:"
+
+#: includes/Hyperpay_main_class.php:250
+msgid "This controls the title which the user sees during checkout."
+msgstr "هذا العنوان سيظهر للمستخدمين خلال عملية الدفع."
+
+#: includes/Hyperpay_main_class.php:251
+msgid "Credit Card"
+msgstr "بطاقة ائتمانية"
+
+#: includes/Hyperpay_main_class.php:254
+msgid "Transaction type"
+msgstr "نوع الحركة"
+
+#: includes/Hyperpay_main_class.php:259
+msgid "Transaction mode"
+msgstr "وضع الحركة"
+
+#: includes/Hyperpay_main_class.php:265
+msgid "Access Token"
+msgstr "رمز الدخول"
+
+#: includes/Hyperpay_main_class.php:269
+msgid "Entity ID"
+msgstr "المعرف الخاص بالتاجر"
+
+#: includes/Hyperpay_main_class.php:273
+msgid "Tokenization"
+msgstr "تسجيل عمليات الدفع"
+
+#: includes/Hyperpay_main_class.php:278
+msgid "Brands"
+msgstr "العلامات التجارية"
+
+#: includes/Hyperpay_main_class.php:284
+msgid "Payment Style"
+msgstr "المظهر"
+
+#: includes/Hyperpay_main_class.php:291
+msgid "Custom Style"
+msgstr "مظهر خاص"
+
+#: includes/Hyperpay_main_class.php:297
+msgid "Enable error logging by email?"
+msgstr "هل تريد ارسال بريد الكتروني في حال وجود خطا ؟"
+
+#: includes/Hyperpay_main_class.php:299
+msgid "Yes"
+msgstr "نعم"
+
+#: includes/Hyperpay_main_class.php:301
+msgid "If checked, an email will be sent to "
+msgstr "في حال الاختيار ، سيتم ارسال بريد الكتروني للمسؤول "
+
+#: includes/Hyperpay_main_class.php:304
+msgid "Return Page"
+msgstr "اعادة التوديه الى"
+
+#: includes/Hyperpay_main_class.php:307
+msgid "success page"
+msgstr "إعادة التوجيه بعد نجاح عملية الدفع"
+
+#: includes/Hyperpay_main_class.php:310
+msgid "Status Of Order"
+msgstr "حالة الطلب بعد اتمام عملية الدفع"
+
+#: includes/Hyperpay_main_class.php:313
+msgid "select order status after success transaction."
+msgstr "حالة الطلب بعد نجاح عملية الدفع."
+
+#: includes/Hyperpay_main_class.php:328
+msgid "Processing"
+msgstr "قيد المعالجة"
+
+#: includes/Hyperpay_main_class.php:329
+msgid "Completed"
+msgstr "مكتمل"
+
+#: includes/Hyperpay_main_class.php:343
+msgid "Enable"
+msgstr "تمكين"
+
+#: includes/Hyperpay_main_class.php:344
+msgid "Disable"
+msgstr "تعطيل"
+
+#: includes/Hyperpay_main_class.php:477 includes/Hyperpay_main_class.php:832
+msgid "Transaction ID: "
+msgstr ":رقم الحركة "
+
+#: includes/Hyperpay_main_class.php:650
+msgid "Problem with payments "
+msgstr ".خطاء في عملية الدفع "
+
+#: includes/Hyperpay_main_class.php:721
+msgid "All Information Should be In English"
+msgstr "جميع الحقول المدخلة يجب ان تكون باللغة الإنجليزية فقط و بدون رموز"
+
+#: includes/Hyperpay_main_class.php:772
+msgid ""
+"Sorry! Please select \"mada\" payment option in order to be able to complete "
+"your purchase successfully."
+msgstr "عذراً يجب اختيار طريقة الدفع \" مدى \" لتتمكن من إتمام العملية بنجاح ."
+
+#: includes/Hyperpay_main_class.php:804
+msgid "(Transaction Error) "
+msgstr "خطأ في عملية الدفع "
+
+#~ msgid "Card"
+#~ msgstr "بطاقة"
+
+#~ msgid "Plain"
+#~ msgstr "بدون تنسيق"
+
+#~ msgid "Hyperpay error:"
+#~ msgstr "حصل خطأ ما :"
